@@ -9,9 +9,10 @@ config = {"server"     : "irc.freenode.net",
           "cmd"        : "!aoeu",
           "admins"     : ["spiritsunite"],
           "admin_comms": ["quit", "restart"],
+          "false"      : ["false", "off"],
           }
 
-settings = {"contract_en": False,
+settings = {"contract": False,
             "max_sb"     : 151,
            }
 
@@ -149,7 +150,7 @@ def handlemsg(ircmsg):
         mess.reply("What?")
 
     # Try replace all contractions
-    if not mess.isCmd() and settings["contract_en"] and mess.sender != config["nick"]:
+    if not mess.isCmd() and settings["contract"] and mess.sender != config["nick"]:
         contr = " " + mess.message;
         for cont, exp in contract.items():
             contr = contr.replace(cont, exp)
@@ -239,12 +240,20 @@ def cmd(comm):
         if len(tokens) > 1:
             if tokens[1].lower() == "contract":
                 if value == None:
-                    settings["contract_en"] = not settings["contract_en"]
+                    settings["contract"] = not settings["contract"]
                 else:
-                    settings["contract_en"] = value
+                    settings["contract"] = value
                 comm.reply("Successfully changed!", method)
             else:
                 comm.reply("{} is not a known setting!".format(tokens[1]), method)
+        else:
+            comm.reply("You must specify a setting!", method)
+    elif tokens[0] == "status":
+        if len(tokens) > 1:
+            try:
+                comm.reply("The value of {} is {!s}.".format(tokens[1], settings[tokens[1]]), method)
+            except KeyError:
+                comm.reply("{} is not a valid setting!".format(tokens[1]), method)
         else:
             comm.reply("You must specify a setting!", method)
     elif tokens[0] == "help":
@@ -260,7 +269,17 @@ def cmd(comm):
             elif tokens[1] == "help":
                 comm.reply(["USAGE: !aoeu help [<command>]", "Get help on the bot's usage."], method)
             elif tokens[1] in ["sb", "scrollback"]:
-                comm.reply(["USAGE: !aoeu (sb|scrollback) [<line no>]", "Gets scrollback.", "Without any parameters, outputs last 10 lines, otherwise, outputs that line."], method)
+                comm.reply(["USAGE: !aoeu (sb|scrollback) [<line no>]",
+                            "Gets scrollback.",
+                            "Without any parameters, outputs last 10 lines, otherwise, outputs that line."],
+                            method)
+            elif tokens[1] == "set":
+                comm.reply(["USAGE: !aoeu set <setting> <option>",
+                            "Sets a setting to a value.",
+                            "Currently the only value is contract."], method)
+            elif tokens[1] == "status":
+                comm.reply(["USAGE: !aoeu status <setting>",
+                            "Outputs the value of a setting."])
             else:
                 comm.reply("Not a valid command", method)
     else:

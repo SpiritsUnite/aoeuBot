@@ -6,9 +6,9 @@ config = {"server"  : "irc.freenode.net",
           "nick"    : "aoeuBot",
           "channels": ["##ncss_challenge"],
           "realname": "SUBot",
-          "cmd"     : "!aoeu"}
+          "cmd"     : "!aoeu",
+          "admins"  : ["spiritsunite"]}
 
-admin = ["spiritsunite"]
 userTarget = ["NOTICE", "CTCP"]
 
 sb = {}
@@ -20,13 +20,13 @@ class Message:
         if not m:
             self.good = False
             return
-        self.good = True
-        self.sender = m.group(1)
+        self.good     = True
+        self.sender   = m.group(1)
         self.username = m.group(2)
         self.hostname = m.group(3)
-        self.command = m.group(4)
-        self.target = m.group(5)
-        self.message = m.group(6).strip()
+        self.command  = m.group(4)
+        self.target   = m.group(5)
+        self.message  = m.group(6).strip()
 
     def reply(self, msg, method=None, to=None):
         if self.good:
@@ -58,6 +58,7 @@ def joinchan(chan):
     ircsock.send("JOIN {}\n".format(chan))
 
 def handlemsg(ircmsg):
+    global command
     mess = Message(ircmsg)
 
     if not mess.good:
@@ -70,33 +71,37 @@ def handlemsg(ircmsg):
         sb[mess.target].insert(0, "<{}> {}".format(mess.sender, mess.message))
         while len(sb[mess.target]) > 151:
             sb[mess.target].pop()
-    if mess.isCmd():
+
+    # If matches a nickserv thing, check
+    if mess.username == "NickServ" and mess.hostname == "services."and mess.target == config["nick"]:
+        # Acc
+        m = re.match(r"\w+ -> (\w+) ACC (\d)", mess.message)
+        if m and verify(msg = mess):
+            if command in ["quit", "restart"]:
+                ircsock.send("QUIT :{}".format(config["nick"]))
+                exit(command == "quit")
+            command = ''
+    elif mess.isCmd():
         cmd(mess)
     elif config["nick"] in mess.message:
         mess.reply("What?")
 
-def verify(nick):
-    print nick
-    ircsock.send("PRIVMSG NickServ :ACC {} *\n".format(nick))
-    ircmsg = ""
-    while "\n" not in ircmsg:
-        ircmsg += ircsock.recv(1)
-    m = re.match(r":.+?:(.+)", ircmsg)
-    m = m.group(1).split()
-    if m:
-        if m[2] in admin and m[4] == "3":
+def verify(nick=None, msg=None):
+    if nick:
+        ircsock.send("PRIVMSG NickServ :ACC {} *\n".format(nick))
+    elif msg:
+        tokens = msg.message.split()
+        if tokens[2] in config["admins"] and tokens[4] == "3":
             return True
-    return False
+        return False
 
-def cmd(comm): 
+def cmd(comm):
+    global command
     comm.message = comm.message[6:].strip()
     tokens = comm.message.split()
     if tokens[0] in ["quit", "restart"]:
-        if verify(comm.sender):
-            ircsock.send("QUIT\n")
-            exit(tokens[0] == "restart")
-        else:
-            comm.reply("Only admins can use this command!", "NOTICE")
+        command = tokens[0]
+        verify(nick = comm.sender)
     elif tokens[0] in ["q", "question"]:
         tokens = comm.message.split(None, 1)
         if len(tokens) > 1 and tokens[1][-1] == "?":
@@ -140,19 +145,27 @@ def cmd(comm):
         comm.reply("Not a valid command")
 
 if __name__ == "__main__":
+    log = ['']
+    command = ''
+
     ircsock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     connect()
     for chan in config["channels"]:
         joinchan(chan)
 
     while True:
-        ircmsg = ircsock.recv(2048)
-        ircmsg = ircmsg.strip("\n\r")
-        print ircmsg
+        ircmsg = ircsock.recv(4096)
+        print ircmsg,
+        ircmsg = ircmsg.split("\r\n")
+        log[0] += ircmsg[0]
+        del ircmsg[0]
+        log.extend(ircmsg)
 
         # Ping? Pong
-        m = re.match(r"^PING :(.+)$", ircmsg)
-        if m:
-            ircsock.send("PONG :{}\n".format(m.group(1)))
-        else:
-            handlemsg(ircmsg)
+        for msg in log[:-1]:
+            m = re.match(r"^PING :(.+)$", msg)
+            if m:
+                ircsock.send("PONG :{}\n".format(m.group(1)))
+            else:
+                handlemsg(msg)
+        log = [log[-1]]

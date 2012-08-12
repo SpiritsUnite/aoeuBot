@@ -1,6 +1,6 @@
 #!/bin/bash
-false
-while [ $? -eq 1 ]
+true
+while [ $? -eq 0 ]
 do
-	python ~/coding/random/ircbot.py
+	python ~/coding/random/aoeubot/aoeubot.py
 done

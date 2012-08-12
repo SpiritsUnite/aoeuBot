@@ -9,9 +9,11 @@ config = {"server"     : "irc.freenode.net",
           "cmd"        : "!aoeu",
           "admins"     : ["spiritsunite"],
           "admin_comms": ["quit", "restart"],
-          "max_sb"     : 151,
-          "contract_en": False,
           }
+
+settings = {"contract_en": False,
+            "max_sb"     : 151,
+           }
 
 contract = {"won't"   : "will not",
             "can't"   : "cannot",
@@ -126,7 +128,7 @@ def handlemsg(ircmsg):
         sb[mess.target] = ["<{}> {}".format(mess.sender, mess.message)]
     else:
         sb[mess.target].insert(0, "<{}> {}".format(mess.sender, mess.message))
-        while len(sb[mess.target]) > config["max_sb"]:
+        while len(sb[mess.target]) > settings["max_sb"]:
             sb[mess.target].pop()
 
     # If matches a nickserv, check
@@ -147,7 +149,7 @@ def handlemsg(ircmsg):
         mess.reply("What?")
 
     # Try replace all contractions
-    if not mess.isCmd() and config["contract_en"] and mess.sender != config["nick"]:
+    if not mess.isCmd() and settings["contract_en"] and mess.sender != config["nick"]:
         contr = " " + mess.message;
         for cont, exp in contract.items():
             contr = contr.replace(cont, exp)
@@ -237,9 +239,9 @@ def cmd(comm):
         if len(tokens) > 1:
             if tokens[1].lower() == "contract":
                 if value == None:
-                    config["contract_en"] = not config["contract_en"]
+                    settings["contract_en"] = not settings["contract_en"]
                 else:
-                    config["contract_en"] = value
+                    settings["contract_en"] = value
                 comm.reply("Successfully changed!", method)
             else:
                 comm.reply("{} is not a known setting!".format(tokens[1]), method)

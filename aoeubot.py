@@ -147,7 +147,7 @@ def handlemsg(ircmsg):
         mess.reply("What?")
 
     # Try replace all contractions
-    if not mess.isCmd() and config["contract_en"]:
+    if not mess.isCmd() and config["contract_en"] and mess.sender != config["nick"]:
         contr = " " + mess.message;
         for cont, exp in contract.items():
             contr = contr.replace(cont, exp)

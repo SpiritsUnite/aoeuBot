@@ -1,15 +1,46 @@
 import socket
 import re
 
-config = {"server"  : "irc.freenode.net",
-          "port"    : "6667",
-          "nick"    : "aoeuBot",
-          "channels": ["##ncss_challenge"],
-          "realname": "SUBot",
-          "cmd"     : "!aoeu",
-          "admins"  : ["spiritsunite"],
+config = {"server"     : "irc.freenode.net",
+          "port"       : "6667",
+          "nick"       : "aoeuBot",
+          "channels"   : ["##ncss_challenge"],
+          "realname"   : "SUBot",
+          "cmd"        : "!aoeu",
+          "admins"     : ["spiritsunite"],
           "admin_comms": ["quit", "restart"],
-          "max_sb"  : 151}
+          "max_sb"     : 151,
+          "contract_en": False,
+          }
+
+contract = {"won't"   : "will not",
+            "can't"   : "cannot",
+            "ain't"   : "is not",
+            "shan't"  : "shall not",
+            "n't"     : " not",
+            "let's"   : "let us",
+            "'m"      : " am",
+            "'re"     : " are",
+            "he's"    : "he is/has",
+            "it's"    : "it is/has",
+            "that's"  : "that is/has",
+            "who's"   : "who is/has",
+            "what's"  : "what is/has",
+            "where's" : "where is/has",
+            "when's"  : "when is/has",
+            "why's"   : "why is/has",
+            "how's"   : "how is/has",
+            "'tis"    : "it is",
+            "'ve"     : " have",
+            "'d"      : " would/did", #
+            "'ll"     : " will/shall",
+            "o'clock" : "of the clock",
+            "o'"      : "of",
+            " 'em"    : "them",
+            "'em"     : " them",
+            " 'im"    : "him",
+            "y'all"   : "you all",
+            }
 
 userTarget = ["NOTICE", "CTCP"]
 
@@ -115,6 +146,16 @@ def handlemsg(ircmsg):
     elif config["nick"] in mess.message:
         mess.reply("What?")
 
+    # Try replace all contractions
+    if not mess.isCmd() and config["contract_en"]:
+        contr = " " + mess.message;
+        for cont, exp in contract.items():
+            contr = contr.replace(cont, exp)
+        if contr[0] != " ":
+            contr = " " + contr
+        if contr != " " + mess.message:
+            mess.reply("Expanded that was:{}".format(contr))
+
 def verify(nick=None, msg=None):
     """Sends a verify based on a nick, or checks verification from an ACC nicserv command"""
     if nick:
@@ -186,6 +227,24 @@ def cmd(comm):
                         comm.reply(sb[comm.target][params[0]:params[1]:params[2]], method)
                 except ValueError:
                     comm.reply("One of the parameters is not a number!")
+    elif tokens[0] == "set":
+        value = None
+        if len(tokens) == 3:
+            if tokens[2].lower() in config["false"]:
+                value = False
+            else:
+                value = True
+        if len(tokens) > 1:
+            if tokens[1].lower() == "contract":
+                if value == None:
+                    config["contract_en"] = not config["contract_en"]
+                else:
+                    config["contract_en"] = value
+                comm.reply("Successfully changed!", method)
+            else:
+                comm.reply("{} is not a known setting!".format(tokens[1]), method)
+        else:
+            comm.reply("You must specify a setting!", method)
     elif tokens[0] == "help":
         if len(tokens) == 1:
             comm.reply(["Available commands are: ", "help, q, question, quit, restart, sb, scrollback", "type \"!aoeu help <command>\" for help on the command"], "NOTICE")

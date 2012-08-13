@@ -13,37 +13,40 @@ config = {"server"     : "irc.freenode.net",
           }
 
 settings = {"contract": False,
-            "max_sb"     : 151,
+            "max_sb"  : 151,
            }
 
-contract = {"won't"   : "will not",
-            "can't"   : "cannot",
-            "ain't"   : "is not",
-            "shan't"  : "shall not",
-            "n't"     : " not",
-            "let's"   : "let us",
-            "'m"      : " am",
-            "'re"     : " are",
-            "he's"    : "he is/has",
-            "it's"    : "it is/has",
-            "that's"  : "that is/has",
-            "who's"   : "who is/has",
-            "what's"  : "what is/has",
-            "where's" : "where is/has",
-            "when's"  : "when is/has",
-            "why's"   : "why is/has",
-            "how's"   : "how is/has",
-            "'tis"    : "it is",
-            "'ve"     : " have",
-            "'d"      : " would/did", #
-            "'ll"     : " will/shall",
-            "o'clock" : "of the clock",
-            "o'"      : "of",
-            " 'em"    : "them",
-            "'em"     : " them",
-            " 'im"    : "him",
-            "y'all"   : "you all",
-            }
+contract = [("won't"   , "will not"),
+            ("can't"   , "cannot"),
+            ("ain't"   , "is not"),
+            ("shan't"  , "shall not"),
+            ("n't"     , " not"),
+            ("let's"   , "let us"),
+            ("'m"      , " am"),
+            ("'re"     , " are"),
+            ("'n'"     , " and "),
+            ("n' "     , "and "),
+            ("n'"      , "and"),
+            ("he's"    , "he is/has"),
+            ("it's"    , "it is/has"),
+            ("that's"  , "that is/has"),
+            ("who's"   , "who is/has"),
+            ("what's"  , "what is/has"),
+            ("where's" , "where is/has"),
+            ("when's"  , "when is/has"),
+            ("why's"   , "why is/has"),
+            ("how's"   , "how is/has"),
+            ("'tis"    , "it is"),
+            ("'ve"     , " have"),
+            ("'d"      , " would/did"),
+            ("'ll"     , " will/shall"),
+            ("o'clock" , "of the clock"),
+            ("o'"      , "of"),
+            (" 'em"    , "them"),
+            ("'em"     , " them"),
+            (" 'im"    , "him"),
+            ("y'all"   , "you all"),
+            ]
 
 userTarget = ["NOTICE", "CTCP"]
 
@@ -152,7 +155,7 @@ def handlemsg(ircmsg):
     # Try replace all contractions
     if not mess.isCmd() and settings["contract"] and mess.sender != config["nick"]:
         contr = " " + mess.message;
-        for cont, exp in contract.items():
+        for cont, exp in contract:
             contr = contr.replace(cont, exp)
         if contr[0] != " ":
             contr = " " + contr
